@@ -1,0 +1,58 @@
+# meshcore-trail-counter-logger configuration
+#
+# Copy this file to `config.toml` and edit. `config.toml` is git-ignored.
+
+[gateway]
+# Currently only "serial" is implemented. BLE and TCP transports are on the
+# roadmap.
+transport = "serial"
+port = "/dev/ttyUSB0"        # Linux: /dev/ttyUSB0 or /dev/ttyACM0
+# port = "COM3"              # Windows
+baud = 115200
+
+[logging]
+level = "INFO"               # DEBUG | INFO | WARNING | ERROR
+
+# One [[sensors]] block per paxcounter node you want to poll.
+[[sensors]]
+# Human-readable name used in the database `sensor` column.
+name = "trailhead-north"
+
+# The paxcounter node's pubkey (hex). You can paste the full key or just the
+# unique prefix - meshcore-py matches contacts by prefix.
+pubkey = "REPLACE_ME"
+
+# Login secret if the paxcounter is configured to require one. Leave empty
+# string for guest access.
+secret = ""
+
+# How often to poll for live telemetry (seconds).
+poll_interval_seconds = 300
+
+# Each poll also requests this many hours of historical hourly samples. Re-
+# polling overlapping history is idempotent (PRIMARY KEY on the table), so it's
+# safe to make this large for gap-recovery. 168 = 7 days.
+backfill_hours = 168
+
+# CayenneLPP channels to record. The paxcounter firmware uses:
+#   1 = battery voltage
+#   2 = wifi unique devices (current hour, in-progress)
+#   3 = ble unique devices  (current hour, in-progress)
+#   4 = wifi 24h rolling sum
+#   5 = ble 24h rolling sum
+channels = [1, 2, 3, 4, 5]
+
+
+# -------- Storage backends ----------------------------------------------------
+# You can enable either, both, or neither (dry-run mode).
+
+[storage.sqlite]
+enabled = true
+path = "data/trail.db"
+
+[storage.influxdb]
+enabled = false
+url = "http://localhost:8086"
+token = "REPLACE_ME"
+org = "trail"
+bucket = "paxcounter"

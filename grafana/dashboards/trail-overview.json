@@ -1,0 +1,63 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Wi-Fi unique devices (per hour, avg)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 0},
+      "targets": [
+        {
+          "query": "from(bucket: \"paxcounter\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"paxcounter\")\n  |> filter(fn: (r) => r.channel == \"2\" and r.kind == \"hourly_avg\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> yield(name: \"wifi_hourly_avg\")"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "BLE unique devices (per hour, avg)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 9},
+      "targets": [
+        {
+          "query": "from(bucket: \"paxcounter\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"paxcounter\")\n  |> filter(fn: (r) => r.channel == \"3\" and r.kind == \"hourly_avg\")\n  |> aggregateWindow(every: 1h, fn: mean, createEmpty: false)\n  |> yield(name: \"ble_hourly_avg\")"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "24h rolling sum (Wi-Fi + BLE)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 18},
+      "targets": [
+        {
+          "query": "from(bucket: \"paxcounter\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"paxcounter\")\n  |> filter(fn: (r) => (r.channel == \"4\" or r.channel == \"5\") and r.kind == \"live\")\n  |> yield(name: \"rolling_24h\")"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Battery (V)",
+      "datasource": {"type": "influxdb", "uid": "InfluxDB"},
+      "gridPos": {"h": 6, "w": 8, "x": 0, "y": 27},
+      "targets": [
+        {
+          "query": "from(bucket: \"paxcounter\")\n  |> range(start: -24h)\n  |> filter(fn: (r) => r._measurement == \"paxcounter\")\n  |> filter(fn: (r) => r.channel == \"1\" and r.kind == \"live\")\n  |> last()"
+        }
+      ]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["paxcounter", "trail"],
+  "templating": {"list": []},
+  "time": {"from": "now-7d", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Trail PAX Counter",
+  "uid": "trail-pax",
+  "version": 1
+}
