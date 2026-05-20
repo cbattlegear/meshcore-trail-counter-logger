@@ -11,14 +11,18 @@ Built to work with the `examples/paxcounter` firmware in MeshCore.
 On a schedule (default: every 5 minutes), the logger:
 
 1. Connects to a local MeshCore *gateway* node over USB-serial
-2. Logs in to the configured paxcounter contact
-3. Asks for the **live** telemetry (channels 2/3/4/5 — current hour Wi-Fi/BLE
-   in-progress count + 24 h rolling sum)
-4. Asks for the **historical** hourly samples for the past N days (default 7)
-   via `GET_AVG_MIN_MAX`, so any gaps from logger / mesh downtime get
-   backfilled automatically
+2. Resolves the paxcounter contact by pubkey prefix and (optionally) logs in
+3. Asks for the **live** telemetry — current values on every reported channel
+   (battery on ch 1, Wi-Fi/BLE in-progress on ch 2/3, 24-h sums on ch 4/5)
+4. Optionally also asks for a **min/max/avg snapshot** over the trailing
+   `mma_window_seconds`
 5. Inserts the rows into SQLite and/or InfluxDB (both are supported,
    independently enabled via config)
+
+History resolution comes from polling frequency: at 5-minute polls you get
+288 samples per channel per day, which is plenty for trail-usage analysis.
+MeshCore's on-device MMA query returns one aggregate per channel per window
+(not per-hour buckets), so we don't bother trying to backfill from it.
 
 A bundled `docker-compose.yml` brings up Grafana + InfluxDB with a starter
 dashboard for quick visualization.
@@ -87,7 +91,7 @@ CREATE TABLE measurements (
     ts          INTEGER NOT NULL,   -- unix epoch seconds (UTC)
     sensor      TEXT NOT NULL,      -- sensor name from config
     channel     INTEGER NOT NULL,   -- CayenneLPP channel id (1=batt, 2=wifi, 3=ble, ...)
-    kind        TEXT NOT NULL,      -- 'live' | 'hourly_avg' | 'hourly_min' | 'hourly_max'
+    kind        TEXT NOT NULL,      -- 'live' | 'window_min' | 'window_max' | 'window_avg'
     value       REAL NOT NULL,
     PRIMARY KEY (ts, sensor, channel, kind)
 );

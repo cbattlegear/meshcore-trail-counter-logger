@@ -26,7 +26,11 @@ class SensorConfig:
     pubkey: str
     secret: str = ""
     poll_interval_seconds: int = 300
-    backfill_hours: int = 168
+    # If > 0, each poll also requests a min/max/avg snapshot over this trailing
+    # window. 0 disables. A single MMA call returns ONE aggregate per channel
+    # for the entire window (not per-hour samples), so set this to your poll
+    # interval to get rolling stats.
+    mma_window_seconds: int = 0
     channels: List[int] = field(default_factory=lambda: [1, 2, 3, 4, 5])
 
 

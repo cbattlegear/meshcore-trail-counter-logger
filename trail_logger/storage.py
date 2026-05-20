@@ -18,7 +18,7 @@ class Measurement:
     ts: int          # unix epoch seconds (UTC)
     sensor: str
     channel: int
-    kind: str        # 'live' | 'hourly_avg' | 'hourly_min' | 'hourly_max'
+    kind: str        # 'live' | 'window_min' | 'window_max' | 'window_avg'
     value: float
 
 
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS measurements (
     ts          INTEGER NOT NULL,
     sensor      TEXT    NOT NULL,
     channel     INTEGER NOT NULL,
-    kind        TEXT    NOT NULL,
+    kind        TEXT NOT NULL,      -- 'live' | 'window_min' | 'window_max' | 'window_avg'
     value       REAL    NOT NULL,
     PRIMARY KEY (ts, sensor, channel, kind)
 );

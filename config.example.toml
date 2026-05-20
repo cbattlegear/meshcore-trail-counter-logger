@@ -29,10 +29,12 @@ secret = ""
 # How often to poll for live telemetry (seconds).
 poll_interval_seconds = 300
 
-# Each poll also requests this many hours of historical hourly samples. Re-
-# polling overlapping history is idempotent (PRIMARY KEY on the table), so it's
-# safe to make this large for gap-recovery. 168 = 7 days.
-backfill_hours = 168
+# If > 0, each poll also asks the node for a min/max/avg snapshot over this
+# trailing window (seconds). MeshCore's MMA query returns ONE aggregate per
+# channel for the entire window - not per-hour samples - so set this to the
+# same length as poll_interval_seconds to get rolling stats, or set it to 0
+# to disable. Live polling alone is sufficient for trail counting.
+mma_window_seconds = 0
 
 # CayenneLPP channels to record. The paxcounter firmware uses:
 #   1 = battery voltage
