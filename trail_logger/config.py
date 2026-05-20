@@ -2,15 +2,33 @@
 
 from __future__ import annotations
 
+import logging
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 if sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover
     import tomli as tomllib
+
+log = logging.getLogger(__name__)
+
+
+def _filter_kwargs(cls, raw: Dict[str, Any], where: str) -> Dict[str, Any]:
+    """Drop keys that aren't fields of `cls`, warning about each one.
+
+    Keeps old config files working when we rename / remove a setting.
+    """
+    known = {f.name for f in fields(cls)}
+    out: Dict[str, Any] = {}
+    for k, v in raw.items():
+        if k in known:
+            out[k] = v
+        else:
+            log.warning("Ignoring unknown config key %r in %s", k, where)
+    return out
 
 
 @dataclass
@@ -78,16 +96,19 @@ def load(path: Optional[Path] = None) -> Config:
     with path.open("rb") as f:
         raw = tomllib.load(f)
 
-    gw = GatewayConfig(**raw.get("gateway", {}))
-    sensors = [SensorConfig(**s) for s in raw.get("sensors", [])]
+    gw = GatewayConfig(**_filter_kwargs(GatewayConfig, raw.get("gateway", {}), "[gateway]"))
+    sensors = [
+        SensorConfig(**_filter_kwargs(SensorConfig, s, f"[[sensors]] #{i}"))
+        for i, s in enumerate(raw.get("sensors", []))
+    ]
     if not sensors:
         raise ValueError("config.toml must define at least one [[sensors]] block")
 
     storage_raw = raw.get("storage", {})
     storage = StorageConfig(
-        sqlite=SqliteConfig(**storage_raw.get("sqlite", {})),
-        influxdb=InfluxConfig(**storage_raw.get("influxdb", {})),
+        sqlite=SqliteConfig(**_filter_kwargs(SqliteConfig, storage_raw.get("sqlite", {}), "[storage.sqlite]")),
+        influxdb=InfluxConfig(**_filter_kwargs(InfluxConfig, storage_raw.get("influxdb", {}), "[storage.influxdb]")),
     )
-    log = LoggingConfig(**raw.get("logging", {}))
+    log_cfg = LoggingConfig(**_filter_kwargs(LoggingConfig, raw.get("logging", {}), "[logging]"))
 
-    return Config(gateway=gw, sensors=sensors, storage=storage, logging=log)
+    return Config(gateway=gw, sensors=sensors, storage=storage, logging=log_cfg)
