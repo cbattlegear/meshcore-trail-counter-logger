@@ -29,7 +29,7 @@
     },
     {
       "type": "timeseries",
-      "title": "24h rolling sum (Wi-Fi + BLE)",
+      "title": "Count since local midnight (Wi-Fi + BLE)",
       "datasource": {"type": "influxdb", "uid": "InfluxDB"},
       "gridPos": {"h": 9, "w": 24, "x": 0, "y": 18},
       "targets": [
